@@ -1,0 +1,13 @@
+[package]
+name = "taffyrb"
+version = "0.1.0"
+edition = "2021"
+authors = ["Brian Field <brian@madsalty.com>"]
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+magnus = { version = "0.4" }
