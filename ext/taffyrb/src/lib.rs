@@ -28,12 +28,10 @@ impl TaffyRB {
         inner.child_count(parent.0).unwrap()
     }
 
-    fn compute_layout(&self, node: &TaffyRBNode) {
+    fn compute_layout(&self, node: &TaffyRBNode, size: Value) {
+        let size = TaffyRBSize::<AvailableSpace>::try_convert(size).unwrap();
         let inner = &self.0;
-        inner
-            .borrow_mut()
-            .compute_layout(node.0, Size::MAX_CONTENT)
-            .unwrap();
+        inner.borrow_mut().compute_layout(node.0, size.0).unwrap();
         std::cell::Ref::map(inner.borrow(), |inner| {
             taffy::debug::print_tree(inner, node.0);
             inner
@@ -55,10 +53,9 @@ impl TaffyRBLayout {
     }
 }
 
-#[magnus::wrap(class = "Taffy::Size", free_immediately, size)]
-struct TaffyRBSize(Size<Dimension>);
+struct TaffyRBSize<T>(Size<T>);
 
-impl TryConvert for TaffyRBSize {
+impl TryConvert for TaffyRBSize<Dimension> {
     fn try_convert(value: magnus::Value) -> Result<Self, Error> {
         let value = magnus::RHash::from_value(value).unwrap();
 
@@ -103,6 +100,27 @@ impl TryConvert for TaffyRBSize {
     }
 }
 
+impl TryConvert for TaffyRBSize<AvailableSpace> {
+    fn try_convert(value: magnus::Value) -> Result<Self, Error> {
+        let value = magnus::RHash::from_value(value).unwrap();
+
+        let mut size = Size {
+            width: AvailableSpace::MaxContent,
+            height: AvailableSpace::MaxContent,
+        };
+
+        if let Ok(width) = value.fetch::<_, f32>(Symbol::new("width")) {
+            size.width = AvailableSpace::Definite(width);
+        }
+
+        if let Ok(height) = value.fetch::<_, f32>(Symbol::new("height")) {
+            size.height = AvailableSpace::Definite(height);
+        }
+
+        Ok(Self(size))
+    }
+}
+
 #[magnus::wrap(class = "Taffy::Style", free_immediately, size)]
 #[derive(Clone, Debug, Default)]
 struct TaffyRBStyle(std::cell::RefCell<Style>);
@@ -115,7 +133,7 @@ impl TaffyRBStyle {
             (),
             (
                 Option<TaffyRBDisplay>,
-                Option<TaffyRBSize>,
+                Option<TaffyRBSize<Dimension>>,
                 Option<TaffyRBFlexDirection>,
                 Option<f32>,
             ),
@@ -191,7 +209,7 @@ fn init() -> Result<(), Error> {
     klass.define_method("new_leaf", method!(TaffyRB::new_leaf, 1))?;
     klass.define_method("child_count", method!(TaffyRB::child_count, 1))?;
     klass.define_method("add_child", method!(TaffyRB::add_child, 2))?;
-    klass.define_method("compute_layout", method!(TaffyRB::compute_layout, 1))?;
+    klass.define_method("compute_layout", method!(TaffyRB::compute_layout, 2))?;
     klass.define_method("layout", method!(TaffyRB::layout, 1))?;
 
     let style_klass = klass.define_class("Style", class::object())?;
