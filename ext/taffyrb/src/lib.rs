@@ -207,11 +207,11 @@ impl TaffyRBStyle {
             _,
             (),
             (
-                Option<TaffyRBDisplay>,
+                Option<&TaffyRBDisplay>,
                 Option<&TaffyRBSizeDimension>,
-                Option<TaffyRBFlexDirection>,
+                Option<&TaffyRBFlexDirection>,
                 Option<f32>,
-                Option<TaffyRBJustifyContent>,
+                Option<&TaffyRBJustifyContent>,
                 Option<&TaffyRBSizeLengthPercentage>,
             ),
             (),
@@ -262,58 +262,59 @@ struct TaffyRBNode(Node);
 #[magnus::wrap(class = "Taffy::Display", free_immediately, size)]
 struct TaffyRBDisplay(Display);
 
-impl TryConvert for TaffyRBDisplay {
-    fn try_convert(value: magnus::Value) -> Result<Self, Error> {
-        let value = Symbol::from_value(value).unwrap().name()?;
-
-        let display = match value.into_owned().as_str() {
-            "flex" => Display::Flex,
-            "grid" => Display::Grid,
-            "none" => Display::None,
-            _ => return Err(Error::new(exception::arg_error(), "no good")),
-        };
-        Ok(Self(display))
-    }
+fn display_flex() -> TaffyRBDisplay {
+    TaffyRBDisplay(Display::Flex)
 }
 
-#[magnus::wrap(class = "Taffy::FlexDirection", free_immediately, size)]
-struct TaffyRBFlexDirection(FlexDirection);
+fn flex_direction_row() -> TaffyRBFlexDirection {
+    TaffyRBFlexDirection(FlexDirection::Row)
+}
 
-impl TryConvert for TaffyRBFlexDirection {
-    fn try_convert(value: magnus::Value) -> Result<Self, Error> {
-        let value = Symbol::from_value(value).unwrap().name()?;
+fn flex_direction_row_reverse() -> TaffyRBFlexDirection {
+    TaffyRBFlexDirection(FlexDirection::RowReverse)
+}
 
-        let direction = match value.into_owned().as_str() {
-            "row" => FlexDirection::Row,
-            "row-reverse" => FlexDirection::RowReverse,
-            "column" => FlexDirection::Column,
-            "column-reverse" => FlexDirection::ColumnReverse,
-            _ => return Err(Error::new(exception::arg_error(), "no good")),
-        };
-        Ok(Self(direction))
-    }
+fn flex_direction_column() -> TaffyRBFlexDirection {
+    TaffyRBFlexDirection(FlexDirection::Column)
+}
+
+fn flex_direction_column_reverse() -> TaffyRBFlexDirection {
+    TaffyRBFlexDirection(FlexDirection::ColumnReverse)
 }
 
 #[magnus::wrap(class = "Taffy::JustifyContent", free_immediately, size)]
 struct TaffyRBJustifyContent(Option<JustifyContent>);
 
-impl TryConvert for TaffyRBJustifyContent {
-    fn try_convert(value: magnus::Value) -> Result<Self, Error> {
-        let value = Symbol::from_value(value).unwrap().name()?;
-
-        let justify = match value.into_owned().as_str() {
-            "flex-start" => Some(JustifyContent::FlexStart),
-            "flex-end" => Some(JustifyContent::FlexEnd),
-            "center" => Some(JustifyContent::Center),
-            "space-between" => Some(JustifyContent::SpaceBetween),
-            "space-around" => Some(JustifyContent::SpaceAround),
-            "space-evenly" => Some(JustifyContent::SpaceEvenly),
-            "none" => None,
-            _ => return Err(Error::new(exception::arg_error(), "no good")),
-        };
-        Ok(Self(justify))
-    }
+fn justify_content_flex_start() -> TaffyRBJustifyContent {
+    TaffyRBJustifyContent(Some(JustifyContent::FlexStart))
 }
+
+fn justify_content_flex_end() -> TaffyRBJustifyContent {
+    TaffyRBJustifyContent(Some(JustifyContent::FlexEnd))
+}
+
+fn justify_content_center() -> TaffyRBJustifyContent {
+    TaffyRBJustifyContent(Some(JustifyContent::Center))
+}
+
+fn justify_content_space_between() -> TaffyRBJustifyContent {
+    TaffyRBJustifyContent(Some(JustifyContent::SpaceBetween))
+}
+
+fn justify_content_space_around() -> TaffyRBJustifyContent {
+    TaffyRBJustifyContent(Some(JustifyContent::SpaceAround))
+}
+
+fn justify_content_space_evenly() -> TaffyRBJustifyContent {
+    TaffyRBJustifyContent(Some(JustifyContent::SpaceEvenly))
+}
+
+fn justify_content_none() -> TaffyRBJustifyContent {
+    TaffyRBJustifyContent(None)
+}
+
+#[magnus::wrap(class = "Taffy::FlexDirection", free_immediately, size)]
+struct TaffyRBFlexDirection(FlexDirection);
 
 #[magnus::init]
 fn init() -> Result<(), Error> {
@@ -343,16 +344,44 @@ fn init() -> Result<(), Error> {
     )?;
     klass.define_class("SizeLengthPercentage", class::object())?;
 
-    let dimension_mod = klass.define_class("Dimension", class::object())?;
-    dimension_mod.define_singleton_method("percent", function!(dimension_percent, 1))?;
-    dimension_mod.define_singleton_method("length", function!(dimension_points, 1))?;
-    dimension_mod.define_singleton_method("auto", function!(dimension_auto, 0))?;
+    let dimension_class = klass.define_class("Dimension", class::object())?;
+    dimension_class.define_singleton_method("percent", function!(dimension_percent, 1))?;
+    dimension_class.define_singleton_method("length", function!(dimension_points, 1))?;
+    dimension_class.define_singleton_method("auto", function!(dimension_auto, 0))?;
 
-    let length_percentage_mod = klass.define_class("LengthPercentage", class::object())?;
-    length_percentage_mod
+    let length_percentage_class = klass.define_class("LengthPercentage", class::object())?;
+    length_percentage_class
         .define_singleton_method("percent", function!(length_percentage_percent, 1))?;
-    length_percentage_mod
+    length_percentage_class
         .define_singleton_method("length", function!(length_percentage_points, 1))?;
+
+    let display_klass = klass.define_class("Display", class::object())?;
+    display_klass.define_singleton_method("flex", function!(display_flex, 0))?;
+
+    let flex_direction_klass = klass.define_class("FlexDirection", class::object())?;
+    flex_direction_klass.define_singleton_method("row", function!(flex_direction_row, 0))?;
+    flex_direction_klass
+        .define_singleton_method("row_reverse", function!(flex_direction_row_reverse, 0))?;
+    flex_direction_klass.define_singleton_method("column", function!(flex_direction_column, 0))?;
+    flex_direction_klass.define_singleton_method(
+        "column_reverse",
+        function!(flex_direction_column_reverse, 0),
+    )?;
+
+    let justify_content_klass = klass.define_class("JustifyContent", class::object())?;
+    justify_content_klass
+        .define_singleton_method("flex_start", function!(justify_content_flex_start, 0))?;
+    justify_content_klass
+        .define_singleton_method("flex_end", function!(justify_content_flex_end, 0))?;
+    justify_content_klass
+        .define_singleton_method("center", function!(justify_content_center, 0))?;
+    justify_content_klass
+        .define_singleton_method("space_between", function!(justify_content_space_between, 0))?;
+    justify_content_klass
+        .define_singleton_method("space_around", function!(justify_content_space_around, 0))?;
+    justify_content_klass
+        .define_singleton_method("space_evenly", function!(justify_content_space_evenly, 0))?;
+    justify_content_klass.define_singleton_method("none", function!(justify_content_none, 0))?;
 
     Ok(())
 }

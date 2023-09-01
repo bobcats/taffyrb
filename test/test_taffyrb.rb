@@ -10,7 +10,7 @@ class TestTaffyrb < Minitest::Test
   def test_it_does_something_useful
     taffy = Taffy.new
     root_style = Taffy::Style.new(
-      display: :flex,
+      display: Taffy::Display.flex,
       size: Taffy::Size.dimension(
         Taffy::Dimension.length(100),
         Taffy::Dimension.length(100)
@@ -59,8 +59,8 @@ class TestTaffyrb < Minitest::Test
           Taffy::Dimension.length(800),
           Taffy::Dimension.length(600)
         ),
-        flex_direction: :column,
-        display: :flex
+        flex_direction: Taffy::FlexDirection.column,
+        display: Taffy::Display.flex
       )
     )
 
@@ -114,7 +114,7 @@ class TestTaffyrb < Minitest::Test
     node = taffy.new_leaf(
       Taffy::Style.new(
         size: Taffy::Size.dimension(Taffy::Dimension.length(100), Taffy::Dimension.length(100)),
-        justify_content: :center
+        justify_content: Taffy::JustifyContent.center
       )
     )
     taffy.add_child(node, child)
@@ -132,7 +132,7 @@ class TestTaffyrb < Minitest::Test
     node = taffy.new_leaf(
       Taffy::Style.new(
         size: Taffy::Size.dimension(Taffy::Dimension.length(100), Taffy::Dimension.length(100)),
-        justify_content: :center
+        justify_content: Taffy::JustifyContent.center
       )
     )
     taffy.add_child(node, child)
