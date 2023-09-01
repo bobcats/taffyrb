@@ -24,7 +24,7 @@ class TestTaffyrb < Minitest::Test
     taffy.add_child(root_node, another_node)
     assert_equal 2, taffy.child_count(root_node)
 
-    taffy.compute_layout(root_node, {width: :auto, height: :auto})
+    taffy.compute_layout(root_node, -1, -1)
     layout = taffy.layout(root_node)
     assert_equal [100, 100], layout.size
 
@@ -67,7 +67,7 @@ class TestTaffyrb < Minitest::Test
     taffy.add_child(root_node, header_node)
     taffy.add_child(root_node, body_node)
 
-    taffy.compute_layout(root_node, {width: 800, height: :auto})
+    taffy.compute_layout(root_node, 800, -1)
 
     assert_equal(taffy.layout(root_node).size, [800, 600])
     assert_equal(taffy.layout(header_node).size, [800, 100])
@@ -119,7 +119,7 @@ class TestTaffyrb < Minitest::Test
     )
     taffy.add_child(node, child)
 
-    taffy.compute_layout(node, {width: 100, height: 100})
+    taffy.compute_layout(node, 100, 100)
     assert_equal [100, 100], taffy.layout(node).size
     assert_equal [50, 100], taffy.layout(child).size
 
@@ -137,7 +137,7 @@ class TestTaffyrb < Minitest::Test
     )
     taffy.add_child(node, child)
 
-    taffy.compute_layout(node, {width: :auto, height: :auto})
+    taffy.compute_layout(node, -1, -1)
     assert_equal [100, 100], taffy.layout(node).size
     assert_equal [50, 100], taffy.layout(child).size
   end
@@ -182,7 +182,7 @@ class TestTaffyrb < Minitest::Test
     taffy.add_child(root, child1)
     taffy.add_child(root, child2)
 
-    taffy.compute_layout(root, {width: :auto, height: :auto})
+    taffy.compute_layout(root, -1, -1)
     assert_equal [80, 20], taffy.layout(root).size
     assert_equal [20, 20], taffy.layout(child0).size
     assert_equal [20, 20], taffy.layout(child1).size

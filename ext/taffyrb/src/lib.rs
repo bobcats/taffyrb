@@ -1,5 +1,5 @@
 use magnus::scan_args::{get_kwargs, scan_args};
-use magnus::{class, define_class, exception, function, method, prelude::*, Error, Value};
+use magnus::{class, define_class, function, method, prelude::*, Error, Value};
 use magnus::{Symbol, TryConvert};
 use taffy::prelude::*;
 use taffy::style::Dimension;
@@ -28,10 +28,21 @@ impl TaffyRB {
         inner.child_count(parent.0).unwrap()
     }
 
-    fn compute_layout(&self, node: &TaffyRBNode, size: Value) {
-        let size = TaffyRBSize::<AvailableSpace>::try_convert(size).unwrap();
+    fn compute_layout(&self, node: &TaffyRBNode, width: isize, height: isize) {
+        let size = Size {
+            width: if width == -1 {
+                AvailableSpace::MaxContent
+            } else {
+                AvailableSpace::Definite(width as f32)
+            },
+            height: if height == -1 {
+                AvailableSpace::MaxContent
+            } else {
+                AvailableSpace::Definite(height as f32)
+            },
+        };
         let inner = &self.0;
-        inner.borrow_mut().compute_layout(node.0, size.0).unwrap();
+        inner.borrow_mut().compute_layout(node.0, size).unwrap();
     }
 
     fn layout(&self, node: &TaffyRBNode) -> TaffyRBLayout {
@@ -323,7 +334,7 @@ fn init() -> Result<(), Error> {
     klass.define_method("new_leaf", method!(TaffyRB::new_leaf, 1))?;
     klass.define_method("child_count", method!(TaffyRB::child_count, 1))?;
     klass.define_method("add_child", method!(TaffyRB::add_child, 2))?;
-    klass.define_method("compute_layout", method!(TaffyRB::compute_layout, 2))?;
+    klass.define_method("compute_layout", method!(TaffyRB::compute_layout, 3))?;
     klass.define_method("layout", method!(TaffyRB::layout, 1))?;
 
     let style_klass = klass.define_class("Style", class::object())?;
