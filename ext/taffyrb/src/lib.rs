@@ -100,6 +100,35 @@ impl TryConvert for TaffyRBSize<Dimension> {
     }
 }
 
+impl TryConvert for TaffyRBSize<LengthPercentage> {
+    fn try_convert(value: magnus::Value) -> Result<Self, Error> {
+        let value = magnus::RHash::from_value(value).unwrap();
+
+        let mut size = Size {
+            width: zero(),
+            height: zero(),
+        };
+
+        if let Ok(width) = value.fetch::<_, f32>(Symbol::new("width_pts")) {
+            size.width = points(width);
+        }
+
+        if let Ok(height) = value.fetch::<_, f32>(Symbol::new("height_pts")) {
+            size.height = points(height);
+        }
+
+        if let Ok(width) = value.fetch::<_, f32>(Symbol::new("width_pct")) {
+            size.width = percent(width);
+        }
+
+        if let Ok(height) = value.fetch::<_, f32>(Symbol::new("height_pct")) {
+            size.height = percent(height);
+        }
+
+        Ok(Self(size))
+    }
+}
+
 impl TryConvert for TaffyRBSize<AvailableSpace> {
     fn try_convert(value: magnus::Value) -> Result<Self, Error> {
         let value = magnus::RHash::from_value(value).unwrap();
@@ -136,12 +165,21 @@ impl TaffyRBStyle {
                 Option<TaffyRBSize<Dimension>>,
                 Option<TaffyRBFlexDirection>,
                 Option<f32>,
+                Option<TaffyRBJustifyContent>,
+                Option<TaffyRBSize<LengthPercentage>>,
             ),
             (),
         >(
             args.keywords,
             &[],
-            &["display", "size", "flex_direction", "flex_grow"],
+            &[
+                "display",
+                "size",
+                "flex_direction",
+                "flex_grow",
+                "justify_content",
+                "gap",
+            ],
         )?;
 
         if let Some(display) = kwargs.optional.0 {
@@ -158,6 +196,14 @@ impl TaffyRBStyle {
 
         if let Some(flex_grow) = kwargs.optional.3 {
             rb_self.0.borrow_mut().flex_grow = flex_grow;
+        }
+
+        if let Some(justify_content) = kwargs.optional.4 {
+            rb_self.0.borrow_mut().justify_content = justify_content.0;
+        }
+
+        if let Some(gap) = kwargs.optional.5 {
+            rb_self.0.borrow_mut().gap = gap.0;
         }
 
         Ok(())
@@ -199,6 +245,27 @@ impl TryConvert for TaffyRBFlexDirection {
             _ => return Err(Error::new(exception::arg_error(), "no good")),
         };
         Ok(Self(direction))
+    }
+}
+
+#[magnus::wrap(class = "Taffy::JustifyContent", free_immediately, size)]
+struct TaffyRBJustifyContent(Option<JustifyContent>);
+
+impl TryConvert for TaffyRBJustifyContent {
+    fn try_convert(value: magnus::Value) -> Result<Self, Error> {
+        let value = Symbol::from_value(value).unwrap().name()?;
+
+        let justify = match value.into_owned().as_str() {
+            "flex-start" => Some(JustifyContent::FlexStart),
+            "flex-end" => Some(JustifyContent::FlexEnd),
+            "center" => Some(JustifyContent::Center),
+            "space-between" => Some(JustifyContent::SpaceBetween),
+            "space-around" => Some(JustifyContent::SpaceAround),
+            "space-evenly" => Some(JustifyContent::SpaceEvenly),
+            "none" => None,
+            _ => return Err(Error::new(exception::arg_error(), "no good")),
+        };
+        Ok(Self(justify))
     }
 }
 
