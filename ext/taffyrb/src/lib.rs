@@ -1,6 +1,5 @@
 use magnus::scan_args::{get_kwargs, scan_args};
 use magnus::{class, define_class, function, method, prelude::*, Error, Value};
-use magnus::{Symbol, TryConvert};
 use taffy::prelude::*;
 use taffy::style::Dimension;
 
@@ -30,19 +29,19 @@ impl TaffyRB {
 
     fn compute_layout(&self, node: &TaffyRBNode, width: isize, height: isize) {
         let size = Size {
-            width: if width == -1 {
-                AvailableSpace::MaxContent
-            } else {
-                AvailableSpace::Definite(width as f32)
-            },
-            height: if height == -1 {
-                AvailableSpace::MaxContent
-            } else {
-                AvailableSpace::Definite(height as f32)
-            },
+            width: Self::available_space(width),
+            height: Self::available_space(height),
         };
         let inner = &self.0;
         inner.borrow_mut().compute_layout(node.0, size).unwrap();
+    }
+
+    fn available_space(num: isize) -> AvailableSpace {
+        if num == -1 {
+            AvailableSpace::MaxContent
+        } else {
+            AvailableSpace::Definite(num as f32)
+        }
     }
 
     fn layout(&self, node: &TaffyRBNode) -> TaffyRBLayout {
@@ -59,8 +58,6 @@ impl TaffyRBLayout {
         (self.0.size.width, self.0.size.height)
     }
 }
-
-struct TaffyRBSize<T>(Size<T>);
 
 #[magnus::wrap(class = "Taffy::SizeDimension", free_immediately, size)]
 struct TaffyRBSizeDimension(Size<Dimension>);
@@ -108,103 +105,8 @@ fn dimension_points(value: f32) -> TaffyRBDimension {
     TaffyRBDimension(Dimension::Points(value))
 }
 
-fn dimension_auto() -> TaffyRBDimension {
+fn auto() -> TaffyRBDimension {
     TaffyRBDimension(Dimension::Auto)
-}
-
-impl TryConvert for TaffyRBSize<Dimension> {
-    fn try_convert(value: magnus::Value) -> Result<Self, Error> {
-        let value = magnus::RHash::from_value(value).unwrap();
-
-        let mut size = Size {
-            width: Dimension::Auto,
-            height: Dimension::Auto,
-        };
-
-        if let Ok(width) = value.fetch::<_, f32>(Symbol::new("width_pts")) {
-            size.width = points(width);
-        }
-
-        if let Ok(height) = value.fetch::<_, f32>(Symbol::new("height_pts")) {
-            size.height = points(height);
-        }
-
-        if let Ok(width) = value.fetch::<_, f32>(Symbol::new("width_pct")) {
-            size.width = percent(width);
-        }
-
-        if let Ok(height) = value.fetch::<_, f32>(Symbol::new("height_pct")) {
-            size.height = percent(height);
-        }
-
-        if value
-            .fetch::<_, bool>(Symbol::new("width_auto"))
-            .ok()
-            .is_some()
-        {
-            size.width = Dimension::Auto;
-        }
-
-        if value
-            .fetch::<_, bool>(Symbol::new("height_auto"))
-            .ok()
-            .is_some()
-        {
-            size.height = Dimension::Auto;
-        }
-
-        Ok(Self(size))
-    }
-}
-
-impl TryConvert for TaffyRBSize<LengthPercentage> {
-    fn try_convert(value: magnus::Value) -> Result<Self, Error> {
-        let value = magnus::RHash::from_value(value).unwrap();
-
-        let mut size = Size {
-            width: zero(),
-            height: zero(),
-        };
-
-        if let Ok(width) = value.fetch::<_, f32>(Symbol::new("width_pts")) {
-            size.width = points(width);
-        }
-
-        if let Ok(height) = value.fetch::<_, f32>(Symbol::new("height_pts")) {
-            size.height = points(height);
-        }
-
-        if let Ok(width) = value.fetch::<_, f32>(Symbol::new("width_pct")) {
-            size.width = percent(width);
-        }
-
-        if let Ok(height) = value.fetch::<_, f32>(Symbol::new("height_pct")) {
-            size.height = percent(height);
-        }
-
-        Ok(Self(size))
-    }
-}
-
-impl TryConvert for TaffyRBSize<AvailableSpace> {
-    fn try_convert(value: magnus::Value) -> Result<Self, Error> {
-        let value = magnus::RHash::from_value(value).unwrap();
-
-        let mut size = Size {
-            width: AvailableSpace::MaxContent,
-            height: AvailableSpace::MaxContent,
-        };
-
-        if let Ok(width) = value.fetch::<_, f32>(Symbol::new("width")) {
-            size.width = AvailableSpace::Definite(width);
-        }
-
-        if let Ok(height) = value.fetch::<_, f32>(Symbol::new("height")) {
-            size.height = AvailableSpace::Definite(height);
-        }
-
-        Ok(Self(size))
-    }
 }
 
 #[magnus::wrap(class = "Taffy::Style", free_immediately, size)]
@@ -277,18 +179,18 @@ fn display_flex() -> TaffyRBDisplay {
     TaffyRBDisplay(Display::Flex)
 }
 
+#[magnus::wrap(class = "Taffy::FlexDirection", free_immediately, size)]
+struct TaffyRBFlexDirection(FlexDirection);
+
 fn flex_direction_row() -> TaffyRBFlexDirection {
     TaffyRBFlexDirection(FlexDirection::Row)
 }
-
 fn flex_direction_row_reverse() -> TaffyRBFlexDirection {
     TaffyRBFlexDirection(FlexDirection::RowReverse)
 }
-
 fn flex_direction_column() -> TaffyRBFlexDirection {
     TaffyRBFlexDirection(FlexDirection::Column)
 }
-
 fn flex_direction_column_reverse() -> TaffyRBFlexDirection {
     TaffyRBFlexDirection(FlexDirection::ColumnReverse)
 }
@@ -299,33 +201,24 @@ struct TaffyRBJustifyContent(Option<JustifyContent>);
 fn justify_content_flex_start() -> TaffyRBJustifyContent {
     TaffyRBJustifyContent(Some(JustifyContent::FlexStart))
 }
-
 fn justify_content_flex_end() -> TaffyRBJustifyContent {
     TaffyRBJustifyContent(Some(JustifyContent::FlexEnd))
 }
-
 fn justify_content_center() -> TaffyRBJustifyContent {
     TaffyRBJustifyContent(Some(JustifyContent::Center))
 }
-
 fn justify_content_space_between() -> TaffyRBJustifyContent {
     TaffyRBJustifyContent(Some(JustifyContent::SpaceBetween))
 }
-
 fn justify_content_space_around() -> TaffyRBJustifyContent {
     TaffyRBJustifyContent(Some(JustifyContent::SpaceAround))
 }
-
 fn justify_content_space_evenly() -> TaffyRBJustifyContent {
     TaffyRBJustifyContent(Some(JustifyContent::SpaceEvenly))
 }
-
 fn justify_content_none() -> TaffyRBJustifyContent {
     TaffyRBJustifyContent(None)
 }
-
-#[magnus::wrap(class = "Taffy::FlexDirection", free_immediately, size)]
-struct TaffyRBFlexDirection(FlexDirection);
 
 #[magnus::init]
 fn init() -> Result<(), Error> {
@@ -358,7 +251,7 @@ fn init() -> Result<(), Error> {
     let dimension_class = klass.define_class("Dimension", class::object())?;
     dimension_class.define_singleton_method("percent", function!(dimension_percent, 1))?;
     dimension_class.define_singleton_method("length", function!(dimension_points, 1))?;
-    dimension_class.define_singleton_method("auto", function!(dimension_auto, 0))?;
+    dimension_class.define_singleton_method("auto", function!(auto, 0))?;
 
     let length_percentage_class = klass.define_class("LengthPercentage", class::object())?;
     length_percentage_class

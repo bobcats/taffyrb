@@ -75,36 +75,6 @@ class TestTaffyrb < Minitest::Test
   end
 
   def test_basic
-    # let mut taffy = Taffy::new();
-    #
-    # let child = taffy.new_leaf(Style {
-    #     size: Size { width: Dimension::Percent(0.5), height: Dimension::Auto },
-    #     ..Default::default()
-    # })?;
-    #
-    # let node = taffy.new_with_children(
-    #     Style {
-    #         size: Size { width: Dimension::Length(100.0), height: Dimension::Length(100.0) },
-    #         justify_content: Some(JustifyContent::Center),
-    #         ..Default::default()
-    #     },
-    #     &[child],
-    # )?;
-    #
-    # println!("Compute layout with 100x100 viewport:");
-    # taffy.compute_layout(
-    #     node,
-    #     Size { height: AvailableSpace::Definite(100.0), width: AvailableSpace::Definite(100.0) },
-    # )?;
-    # println!("node: {:#?}", taffy.layout(node)?);
-    # println!("child: {:#?}", taffy.layout(child)?);
-    #
-    # println!("Compute layout with undefined (infinite) viewport:");
-    # taffy.compute_layout(node, Size::MAX_CONTENT)?;
-    # println!("node: {:#?}", taffy.layout(node)?);
-    # println!("child: {:#?}", taffy.layout(child)?);
-    # Ok(())
-
     taffy = Taffy.new
     child = taffy.new_leaf(
       Taffy::Style.new(
@@ -114,7 +84,7 @@ class TestTaffyrb < Minitest::Test
     node = taffy.new_leaf(
       Taffy::Style.new(
         size: Taffy::Size.dimension(Taffy::Dimension.length(100), Taffy::Dimension.length(100)),
-        justify_content: Taffy::JustifyContent.center
+        justify_content: Taffy::JustifyContent.flex_start
       )
     )
     taffy.add_child(node, child)
@@ -143,24 +113,6 @@ class TestTaffyrb < Minitest::Test
   end
 
   def test_flex_box_gap
-    # let mut taffy = Taffy::new();
-    #
-    # let child_style = Style { size: Size { width: points(20.0), height: points(20.0) }, ..Default::default() };
-    # let child0 = taffy.new_leaf(child_style.clone())?;
-    # let child1 = taffy.new_leaf(child_style.clone())?;
-    # let child2 = taffy.new_leaf(child_style.clone())?;
-    #
-    # let root = taffy.new_with_children(
-    #     Style { gap: Size { width: points(10.0), height: zero() }, ..Default::default() },
-    #     &[child0, child1, child2],
-    # )?;
-    #
-    # // Compute layout and print result
-    # taffy.compute_layout(root, Size::MAX_CONTENT)?;
-    # taffy::debug::print_tree(&taffy, root);
-    #
-    # Ok(())
-
     taffy = Taffy.new
     child_style = Taffy::Style.new(
       size: Taffy::Size.dimension(Taffy::Dimension.length(20), Taffy::Dimension.length(20))
@@ -183,6 +135,7 @@ class TestTaffyrb < Minitest::Test
     taffy.add_child(root, child2)
 
     taffy.compute_layout(root, -1, -1)
+
     assert_equal [80, 20], taffy.layout(root).size
     assert_equal [20, 20], taffy.layout(child0).size
     assert_equal [20, 20], taffy.layout(child1).size
