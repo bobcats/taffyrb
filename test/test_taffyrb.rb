@@ -11,11 +11,12 @@ class TestTaffyrb < Minitest::Test
     taffy = Taffy.new
     root_style = Taffy::Style.new(
       display: :flex,
-      size: {
-        width_pts: 100,
-        height_pts: 100
-      }
+      size: Taffy::Size.dimension(
+        Taffy::Dimension.length(100),
+        Taffy::Dimension.length(100)
+      )
     )
+
     root_node = taffy.new_leaf(root_style)
     another_node = taffy.new_leaf(root_style)
     grandchild_node = taffy.new_leaf(root_style)
@@ -35,20 +36,29 @@ class TestTaffyrb < Minitest::Test
     taffy = Taffy.new
     header_node = taffy.new_leaf(
       Taffy::Style.new(
-        size: {width_pts: 800, height_pts: 100}
+        size: Taffy::Size.dimension(
+          Taffy::Dimension.length(800),
+          Taffy::Dimension.length(100)
+        )
       )
     )
 
     body_node = taffy.new_leaf(
       Taffy::Style.new(
-        size: {width_pts: 800, height_auto: true},
+        size: Taffy::Size.dimension(
+          Taffy::Dimension.length(800),
+          Taffy::Dimension.auto
+        ),
         flex_grow: 1.0
       )
     )
 
     root_node = taffy.new_leaf(
       Taffy::Style.new(
-        size: {width_pts: 800, height_pts: 600},
+        size: Taffy::Size.dimension(
+          Taffy::Dimension.length(800),
+          Taffy::Dimension.length(600)
+        ),
         flex_direction: :column,
         display: :flex
       )
@@ -98,12 +108,12 @@ class TestTaffyrb < Minitest::Test
     taffy = Taffy.new
     child = taffy.new_leaf(
       Taffy::Style.new(
-        size: {width_pct: 0.5, height_auto: true}
+        size: Taffy::Size.dimension(Taffy::Dimension.percent(0.5), Taffy::Dimension.auto)
       )
     )
     node = taffy.new_leaf(
       Taffy::Style.new(
-        size: {width_pts: 100, height_pts: 100},
+        size: Taffy::Size.dimension(Taffy::Dimension.length(100), Taffy::Dimension.length(100)),
         justify_content: :center
       )
     )
@@ -116,12 +126,12 @@ class TestTaffyrb < Minitest::Test
     taffy = Taffy.new
     child = taffy.new_leaf(
       Taffy::Style.new(
-        size: {width_pct: 0.5, height_auto: true}
+        size: Taffy::Size.dimension(Taffy::Dimension.percent(0.5), Taffy::Dimension.auto)
       )
     )
     node = taffy.new_leaf(
       Taffy::Style.new(
-        size: {width_pts: 100, height_pts: 100},
+        size: Taffy::Size.dimension(Taffy::Dimension.length(100), Taffy::Dimension.length(100)),
         justify_content: :center
       )
     )
@@ -153,7 +163,7 @@ class TestTaffyrb < Minitest::Test
 
     taffy = Taffy.new
     child_style = Taffy::Style.new(
-      size: {width_pts: 20, height_pts: 20}
+      size: Taffy::Size.dimension(Taffy::Dimension.length(20), Taffy::Dimension.length(20))
     )
     child0 = taffy.new_leaf(child_style)
     child1 = taffy.new_leaf(child_style)
@@ -161,7 +171,10 @@ class TestTaffyrb < Minitest::Test
 
     root = taffy.new_leaf(
       Taffy::Style.new(
-        gap: {width_pts: 10, height_pts: 0}
+        gap: Taffy::Size.length_percentage(
+          Taffy::LengthPercentage.length(10),
+          Taffy::LengthPercentage.length(0)
+        )
       )
     )
 

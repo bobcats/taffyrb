@@ -32,10 +32,6 @@ impl TaffyRB {
         let size = TaffyRBSize::<AvailableSpace>::try_convert(size).unwrap();
         let inner = &self.0;
         inner.borrow_mut().compute_layout(node.0, size.0).unwrap();
-        std::cell::Ref::map(inner.borrow(), |inner| {
-            taffy::debug::print_tree(inner, node.0);
-            inner
-        });
     }
 
     fn layout(&self, node: &TaffyRBNode) -> TaffyRBLayout {
@@ -54,6 +50,56 @@ impl TaffyRBLayout {
 }
 
 struct TaffyRBSize<T>(Size<T>);
+
+#[magnus::wrap(class = "Taffy::SizeDimension", free_immediately, size)]
+struct TaffyRBSizeDimension(Size<Dimension>);
+
+impl TaffyRBSizeDimension {
+    fn new(width: &TaffyRBDimension, height: &TaffyRBDimension) -> Self {
+        Self(Size {
+            width: width.0,
+            height: height.0,
+        })
+    }
+}
+
+#[magnus::wrap(class = "Taffy::SizeLengthPercentage", free_immediately, size)]
+struct TaffyRBSizeLengthPercentage(Size<LengthPercentage>);
+
+impl TaffyRBSizeLengthPercentage {
+    fn new(width: &TaffyRBLengthPercentage, height: &TaffyRBLengthPercentage) -> Self {
+        Self(Size {
+            width: width.0,
+            height: height.0,
+        })
+    }
+}
+
+#[magnus::wrap(class = "Taffy::LengthPercentage", free_immediately, size)]
+struct TaffyRBLengthPercentage(LengthPercentage);
+
+fn length_percentage_percent(value: f32) -> TaffyRBLengthPercentage {
+    TaffyRBLengthPercentage(LengthPercentage::Percent(value))
+}
+
+fn length_percentage_points(value: f32) -> TaffyRBLengthPercentage {
+    TaffyRBLengthPercentage(LengthPercentage::Points(value))
+}
+
+#[magnus::wrap(class = "Taffy::Dimension", free_immediately, size)]
+struct TaffyRBDimension(Dimension);
+
+fn dimension_percent(value: f32) -> TaffyRBDimension {
+    TaffyRBDimension(Dimension::Percent(value))
+}
+
+fn dimension_points(value: f32) -> TaffyRBDimension {
+    TaffyRBDimension(Dimension::Points(value))
+}
+
+fn dimension_auto() -> TaffyRBDimension {
+    TaffyRBDimension(Dimension::Auto)
+}
 
 impl TryConvert for TaffyRBSize<Dimension> {
     fn try_convert(value: magnus::Value) -> Result<Self, Error> {
@@ -162,11 +208,11 @@ impl TaffyRBStyle {
             (),
             (
                 Option<TaffyRBDisplay>,
-                Option<TaffyRBSize<Dimension>>,
+                Option<&TaffyRBSizeDimension>,
                 Option<TaffyRBFlexDirection>,
                 Option<f32>,
                 Option<TaffyRBJustifyContent>,
-                Option<TaffyRBSize<LengthPercentage>>,
+                Option<&TaffyRBSizeLengthPercentage>,
             ),
             (),
         >(
@@ -286,6 +332,27 @@ fn init() -> Result<(), Error> {
     klass.define_class("Node", class::object())?;
     let layout_klass = klass.define_class("Layout", class::object())?;
     layout_klass.define_method("size", method!(TaffyRBLayout::size, 0))?;
+
+    let size_klass = klass.define_class("Size", class::object())?;
+    size_klass.define_singleton_method("dimension", function!(TaffyRBSizeDimension::new, 2))?;
+    klass.define_class("SizeDimension", class::object())?;
+
+    size_klass.define_singleton_method(
+        "length_percentage",
+        function!(TaffyRBSizeLengthPercentage::new, 2),
+    )?;
+    klass.define_class("SizeLengthPercentage", class::object())?;
+
+    let dimension_mod = klass.define_class("Dimension", class::object())?;
+    dimension_mod.define_singleton_method("percent", function!(dimension_percent, 1))?;
+    dimension_mod.define_singleton_method("length", function!(dimension_points, 1))?;
+    dimension_mod.define_singleton_method("auto", function!(dimension_auto, 0))?;
+
+    let length_percentage_mod = klass.define_class("LengthPercentage", class::object())?;
+    length_percentage_mod
+        .define_singleton_method("percent", function!(length_percentage_percent, 1))?;
+    length_percentage_mod
+        .define_singleton_method("length", function!(length_percentage_points, 1))?;
 
     Ok(())
 }
